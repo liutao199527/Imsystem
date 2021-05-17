@@ -55,7 +55,7 @@ func (this *Server) BroadCast(user *User, msg string) {
 
 func (this *Server) Handler(conn net.Conn) {
 	//....当前链接的业务
-	fmt.Println("链接建立成功", conn)
+	fmt.Println("connect successful", conn)
 
 	user := NewUser(conn, this)
 
@@ -104,11 +104,11 @@ func (this *Server) Handler(conn net.Conn) {
 		case <-isLive:
 			//当前用户活跃，应该重置定时器
 			//不做任何处理，为了激活select,更新定时器
-		case <-time.After(time.Second * 20):
+		case <-time.After(time.Second * 300):
 			//已经超时，将当前的客户端强制关闭
 			user.SendMsg("timeout,forced return")
 
-			//将用户从Onlinemap中删除
+			//将用户从OnlineMap中删除
 			user.server.mapLock.Lock()
 			delete(user.server.OnlineMap, user.Name)
 			user.server.mapLock.Unlock()
@@ -116,7 +116,10 @@ func (this *Server) Handler(conn net.Conn) {
 			//销毁用户资源
 			close(user.C)
 
-			conn.Close()
+			err := conn.Close()
+			if err != nil {
+				return
+			}
 
 			return
 		}
